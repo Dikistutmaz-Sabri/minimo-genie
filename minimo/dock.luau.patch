@@ -1,0 +1,39 @@
+--- a/dock.luau
++++ b/dock.luau
+@@ -22,6 +22,7 @@
+ local THUMBS = RUNTIME .. "/minimo-kucuk"
+ local dropped_paths = nil
+ local last_dark = nil
++local last_genie = nil   -- minimo-genie: what was last written
+ 
+ sys.watch("apps", function(list) if type(list) == "table" then apps = list end end)
+ 
+@@ -200,6 +201,28 @@
+                 end
+             end
+             fact.hide = over
++            --  minimo-genie (~/Proyectos/minimo-genie): where each icon is, so windows flow out
++            --  of it and into it. The centre of each icon, in global logical px, as dock.plm
++            --  lays them out (risen); a window put away, its small picture.
++            local tw = 28 + 60 + #rows * 60 + (#away_rows > 0 and 20 + #away_rows * 76 or 0) + 20 + #prow * 26 + 52
++            local ox, oy = (tonumber(mon.x) or 0) + W / 2 - 700, (tonumber(mon.y) or 0) + H - 49
++            local xi = 700 - tw / 2 + 74
++            local lines = {}
++            local function put(key, x)
++                if key and key ~= "" then lines[#lines + 1] = string.format("%s %d %d", tostring(key):lower(), math.floor(ox + x), math.floor(oy)) end
++            end
++            for i, e in ipairs(shown) do
++                local x = xi + (i - 1) * 60 + 30
++                put(e.class, x)
++                if e.app then put(e.app.wmclass, x); put(id_of(e.app), x); put(id_of(e.app):match("([^.]+)$"), x) end
++                for _, w in ipairs(e.windows) do if not w.hidden then put(w.addr, x) end end
++            end
++            for j, w in ipairs(away) do put(w.addr, xi + #rows * 60 + 20 + (j - 1) * 76 + 38) end
++            local txt = table.concat(lines, "\n") .. "\n"
++            if txt ~= last_genie then
++                last_genie = txt
++                run("sh", { "-c", 'printf "%s" "$2" > "$1"', "sh", RUNTIME .. "/minimo-genie", txt }, function() end)
++            end
+             local py = tonumber(tostring(parts[9] or ""):match(",%s*(%-?%d+)"))
+             if fact.reveal and py and py < H - 120 then fact.reveal = false end
+         end

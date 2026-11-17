@@ -1,0 +1,14 @@
+--- a/serbest.lua
++++ b/serbest.lua
+@@ -114,6 +114,11 @@
+ 	--  Only a free window can be shrunk and dropped; a tiled one just goes
+ 	--  (and its drop still falls into the dock).
+ 	if not w.floating then steps = { steps[5], steps[6] } end
++	--  minimo-genie (~/Proyectos/minimo-genie), when loaded: the window flows into the
++	--  dock instead (its picture taken and moved away in one go), then the drop rings.
++	local genie = string.format("hyprctl --batch 'genie out %s ; dispatch hl.dsp.window.move({ workspace = \"special:minimo\", window = \"%s\", follow = false })'; sleep 0.45; %s",
++		addr, sel, "pleamar --say dock 'emit dusus 700' >/dev/null 2>&1")
++	steps = { "if hyprctl plugin list 2>/dev/null | grep -q minimo-genie; then " .. genie .. "; else " .. table.concat(steps, "; ") .. "; fi" }
+ 	local script = string.format("mkdir -p %s; rm -f %s/%s-*.png; grim -s 0.25 -g \"%s\" %s/%s-%d.png; %s",
+ 		THUMBS, THUMBS, addr, geo, THUMBS, addr, os.time(), table.concat(steps, "; "))
+ 	hl.exec_cmd("sh -c '" .. script:gsub("'", "'\\''") .. "'")
